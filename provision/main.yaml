@@ -1,0 +1,240 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: A stack for deploying a lambda function that will create a thumbnail if it does not
+  already exists. This involves the operations of shrinking and resizing using Sharp (npm library),
+  and compressing using node native module zlib. Finally it is stored in a s3 bucket with an expiration
+  rule that will expire all the thumbnails past X days of created.
+Parameters:
+  EnvironmentName:
+    Type: String
+    Description: An environment name that will be prefixed to resource names
+    AllowedValues: [ local, development, staging, production ]
+    Default: local
+  CodeS3Bucket:
+    Type: String
+    Description: The bucket name where the lambda code is hosted
+
+  TargetS3Bucket:
+    Type: String
+    Description: Bucket name where the lambda is going to save the thumbnails
+  TargetS3BucketRegion:
+    Type: String
+    Description: |
+      Bucket region where the lambda ig going to save the thumbnails.
+      Example: uploads.domain.com
+    AllowedValues: [
+      us-east-2,
+      us-east-1,
+      us-west-1,
+      us-west-2,
+      af-south-1,
+      ap-east-1,
+      ap-southeast-3,
+      ap-south-1,
+      ap-northeast-3,
+      ap-northeast-2,
+      ap-southeast-1,
+      ap-southeast-2,
+      ap-northeast-1,
+      ca-central-1,
+      eu-central-1,
+      eu-west-1,
+      eu-west-2,
+      eu-south-1,
+      eu-west-3,
+      eu-north-1,
+      me-south-1,
+      sa-east-1
+    ]
+  TargetS3WebRootUrl:
+    Type: String
+    Description: |
+      Root url of the S3 website that lambda will redirect to, after the file compression.
+      Example: https://uploads.domain.com/
+  MemorySize:
+    Type: Number
+    Description: |
+      Max memory size in MB available during runtime (you will be billed just for the memory
+      used, not max memory). Increasing the function memory also increases its CPU allocation.
+    AllowedValues: [128, 256, 512, 1024]
+    Default: 256
+  CreateClearCacheLambdaEdge:
+    Type: String
+    AllowedValues: [
+      true,
+      false
+    ]
+    Default: true,
+    Description: Whether we should include the clear cache lambda@edge function or not.
+Conditions:
+  IncludeClearCacheFunction:  !Equals [!Ref CreateClearCacheLambdaEdge, true]
+Mappings:
+  Lambda:
+    Memory:
+      Size: 512
+    Code:
+      ObjectKey: lambda/image-compress-lambda.zip
+Resources:
+  ClearCacheEdgeLambdaRole:
+    Type: AWS::IAM::Role
+    Condition: IncludeClearCacheFunction
+    Properties:
+      RoleName: !Sub image-compress-lambda-${EnvironmentName}-role
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com",
+                  "edgelambda.amazonaws.com"
+                ]
+              },
+              "Action": ["sts:AssumeRole"]
+            }
+          ]
+        }
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSLambdaExecute
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: !Sub image-compress-lambda-${EnvironmentName}-role-policy
+          PolicyDocument: |
+            {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+  ClearCacheEdgeLambdaFunction:
+      Type: AWS::Lambda::Function
+      Condition: IncludeClearCacheFunction
+      Properties:
+        Code:
+          S3Bucket: !Sub ${EnvironmentName}
+          S3Key: !Sub ${CodeS3ObjectKey}
+        Description: AWS Lambda@Edge ${EnvironmentName} function to delete
+        FunctionName: !Sub disable-cache-cloudfront-lambda-${EnvironmentName}
+        Handler: index.handler
+        MemorySize: 128
+        PackageType: Zip
+        Role: !GetAtt ClearCacheEdgeLambdaRole.Arn
+        Runtime: nodejs16.x
+        Timeout: 5
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub image-compress-lambda-${EnvironmentName}-role
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": { "Service": [ "lambda.amazonaws.com" ] },
+              "Action": [ "sts:AssumeRole" ]
+            }
+          ]
+        }
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSLambdaExecute
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSConfigRulesExecutionRole
+      Policies:
+        - PolicyName: !Sub image-compress-lambda-${EnvironmentName}-role-policy
+          PolicyDocument: |
+            {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*",
+                    "kms:Decrypt"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Sub ${EnvironmentName}
+        S3Key: !Sub ${CodeS3ObjectKey}
+      Description: AWS Lambda ${EnvironmentName} function to compress and shrink images.
+      FunctionName: !Sub image-compress-lambda-${EnvironmentName}
+      Handler: index.handler
+      MemorySize: !Sub ${MemorySize}
+      PackageType: Zip
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: nodejs16.x
+      Timeout: 60
+      Environment:
+        Variables:
+          BUCKET: !Sub ${TargetS3Bucket}
+          REGION: !Sub ${TargetS3BucketRegion}
+          ROOT_URL: !Sub ${TargetS3WebRootUrl}
+  ApiGateway:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Description: Image compress lambda HTTP API
+      Name: !Sub image-compress-gateway-api-${EnvironmentName}
+      ProtocolType: HTTP
+  ApiGatewayInvokeLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      # NOTE: https://docs.aws.amazon.com/apigateway/latest/developerguide/arn-format-reference.html
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*
+  LambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    DependsOn:
+      - LambdaFunction
+    Properties:
+      ApiId: !Ref ApiGateway
+      IntegrationMethod: GET
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt LambdaFunction.Arn
+      PayloadFormatVersion: 2.0
+  HTTPAPIRoute:
+    Type: AWS::ApiGatewayV2::Route
+    DependsOn:
+      - LambdaIntegration
+    Properties:
+      ApiId: !Ref ApiGateway
+      RouteKey: $default
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref LambdaIntegration
+  ApiGatewayStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      StageName: !Sub ${EnvironmentName}
+      Description: !Sub ${EnvironmentName}
+      AutoDeploy: true
+      ApiId: !Ref ApiGateway
+      AccessLogSettings:
+        DestinationArn: !GetAtt ApiGatewayLogGroup.Arn
+        Format: $context.identity.sourceIp - - [$context.requestTime] "$context.httpMethod $context.routeKey $context.protocol" $context.status $context.responseLength $context.requestId $context.integrationErrorMessage
+  ApiGatewayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub qempo-image-compress-gateway-api-access-logs-${EnvironmentName}
+      RetentionInDays: 30
+Outputs:
+  Endpoint:
+    Value: !Sub https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${ApiGatewayStage}/

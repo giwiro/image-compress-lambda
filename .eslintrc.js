@@ -7,6 +7,7 @@ module.exports = {
   ],
   env: {
     es6: true,
+    node: true,
   },
   parser: '@typescript-eslint/parser',
   parserOptions: {
@@ -14,7 +15,7 @@ module.exports = {
     sourceType: 'module',
     project: './tsconfig.json',
   },
-  ignorePatterns: ['.eslintrc.js'],
+  ignorePatterns: ['.eslintrc.js', '**/*.js'],
   rules: {
     'no-param-reassign': ['error', {props: false}],
     '@typescript-eslint/no-explicit-any': 'off',

@@ -1,7 +1,7 @@
 # image-compress-lambda
 Node.js AWS lambda handler for compressing and resizing images on the fly.
 
-The aim of this project is to provide a function which shrinks and compresses images on the fly, using S3 as
+The aim of this project is to provide a lambda function which shrinks and compresses images on the fly, using S3 as
 data repository.
 
 [![nodejs](https://badges.aleen42.com/src/node.svg)](https://nodejs.org/)
@@ -28,7 +28,8 @@ it with the S3 bucket.
 
 2. Cloudfront later will perform a reverse proxy to the S3 object website url.
 
-3. If the object is present in the bucket (404), then it is returned. Otherwise, it will redirect to the API Gateway. **(NOTE #1)** **(NOTE #2)**
+3. If the object is present in the bucket (404), then it is returned. Otherwise, it will redirect to the API Gateway.
+   **(NOTE #1)** **(NOTE #2)**
 
 4. The API Gateway will perform a call (invoke) to the aws lambda function.
 
@@ -72,7 +73,10 @@ Then, the thumbnail gets generated in the step 5 and then in step 6 it returns t
 generated thumbnail. At this point when the client is going to follow this redirect, it will hit cloudfront and instead of
 returning the new s3 object, it will return what cached in the previous step (3).
 
-At the end you will have the following loop: `3 -> 4 -> 5 -> 3 -> 4 -> 5 -> 3 -> 4 -> 5 ...`
+At the end you will have the following loop: `3 -> 4 -> 5 -> 3 -> 4 -> 5 -> 3 -> 4 -> 5 ...`.
+
+Optionally this repo provides an inline function called `disable-cache-cloudfront-lambda` by default (it does not require to be
+hosted in S3). But if you want to provide it yourself, here are some pointers:
 
 The solution will be something like this: Find a way so that cloudfront does not cache the temp redirects (302 or 307).
 Sadly there is not a "simple" solution, because cloudfront is not that "smart".
@@ -119,10 +123,9 @@ The role looks like this (don't forget `edgelambda.amazonaws.com`):
 }
 ```
 
-Finally, you just need to link the cloudfront distribution with the lambda function
-we just created, I suggest you do it from the lambda panel (it can also be done from
-the cloudfront panel).
-In the lambda panel, click on `Actions` and `Deploy Lambda@Edge`, after that select
-the correct cf distribution and event type `origin-response`.
+Finally, you just need to link the cloudfront distribution with the lambda function we just created, I suggest you do it 
+from the lambda panel (it can also be done from the cloudfront panel).
+In the lambda panel, click on `Actions` and `Deploy Lambda@Edge`, after that select the correct cf distribution and event 
+type `origin-response`.
 
-pd: Do not forget to create a cloudfront invalidation in order to see the changes.
+PD: Do not forget to create a cloudfront invalidation in order to see the changes.

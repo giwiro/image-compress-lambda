@@ -1,7 +1,6 @@
 node_modules/*
 build/*
 config/*
-scripts/*
 vendor-build/*
 polyfills.js
 spack.config.js
