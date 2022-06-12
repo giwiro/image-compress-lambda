@@ -1,12 +1,14 @@
-# Image compress lambda
+# image-compress-lambda
 Node.js AWS lambda handler for compressing and resizing images on the fly.
 
 The aim of this project is to provide a function which shrinks and compresses images on the fly, using S3 as
 data repository.
 
-[![License: GNU](https://img.shields.io/badge/License-GNU-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.en.html)
-[![types](https://img.shields.io/npm/types/culqi-node)]()
+[![nodejs](https://badges.aleen42.com/src/node.svg)](https://nodejs.org/)
+[![types](https://badges.aleen42.com/src/typescript.svg)](https://www.typescriptlang.org/)
+[![lint](https://badges.aleen42.com/src/eslint.svg)](https://eslint.org/)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
+[![License: GNU](https://img.shields.io/badge/License-GNU-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.en.html)
 
 ## Stack
 
@@ -21,12 +23,12 @@ it with the S3 bucket.
 ![architecture](resources/image-compress-lambda-architecture.png?raw=true)
 
 1. The HTTP request first lands on Cloudfront which will perform ssl termination and cache for the s3 objects.
-   The format will be something like this: `<path>/<dimensions>/<filename>`. **(NOTE #1)**
+   The format will be something like this: `<path>/<dimensions>/<filename>`.
    For example: `/some/public/path/200x200/picture_1618444089.jpg`.
 
 2. Cloudfront later will perform a reverse proxy to the S3 object website url.
 
-3. If the object is present in the bucket (404), then it is returned. Otherwise, it will redirect to the API Gateway. **(NOTE #2)** **(NOTE #3)**
+3. If the object is present in the bucket (404), then it is returned. Otherwise, it will redirect to the API Gateway. **(NOTE #1)** **(NOTE #2)**
 
 4. The API Gateway will perform a call (invoke) to the aws lambda function.
 
@@ -43,28 +45,24 @@ it with the S3 bucket.
 
 ### NOTE 1
 
-### NOTE 2
-
 Do not forget to configure the S3 redirect rules when the object is absent (404). The rule would be something like this:
 
 ```json
 [
   {
     "Condition": {
-      "HttpErrorCodeReturnedEquals": "404",
-      "KeyPrefixEquals": "public"
+      "HttpErrorCodeReturnedEquals": "404"
     },
     "Redirect": {
       "HostName": "<api_gateway_id>.execute-api.<region>.amazonaws.com",
       "HttpRedirectCode": "307",
-      "Protocol": "https",
-      "ReplaceKeyPrefixWith": "local/public"
+      "Protocol": "https"
     }
   }
 ]
 ```
 
-### NOTE 3
+### NOTE 2
 
 There might be a small (big) inconvenient that will cause an infinite loop.
 
