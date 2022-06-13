@@ -54,6 +54,7 @@ const handler: APIGatewayProxyHandlerV2 = async (
   try {
     const {path, dimensions, fileName, originalObjectKey} =
       parseUrlPath(urlPath);
+
     originalKey = originalObjectKey;
     [width, height] = extractDimensions(dimensions);
     newKey = `${path}${dimensions}/${fileName}`;

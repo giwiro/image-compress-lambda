@@ -13,6 +13,9 @@ const rootDirectory = resolveApp('.');
 const buildDirectory = resolveApp('build');
 const buildZipDirectory = resolveApp('build-zip');
 
+const isCI = process.env['CI'] !== 'false';
+const shouldBuildZip = process.env['BUILD_ZIP'] !== 'false';
+
 function deleteDir(dir: string): Promise<void> {
   return new Promise((resolve, reject) => {
     fs.rm(dir, {recursive: true, force: true}, (err) => {
@@ -93,23 +96,30 @@ Promise.resolve()
     );
   })
   .then(() => {
-    console.log(`${chalk.cyan('[λ]')} Reinstalling sharp for linux x64`);
-    return deleteDir(`${buildDirectory}/node_modules/sharp`).then(() =>
-      execCommand(
-        'npm install --arch=x64 --platform=linux sharp',
-        buildDirectory
-      )
-    );
+    if (isCI) {
+      console.log(`${chalk.cyan('[λ]')} Reinstalling sharp for linux x64`);
+      return deleteDir(`${buildDirectory}/node_modules/sharp`).then(() =>
+        execCommand(
+          'npm install --arch=x64 --platform=linux sharp',
+          buildDirectory
+        )
+      );
+    } else {
+      return Promise.resolve('');
+    }
   })
   .then(() => {
-    if (!fs.existsSync(buildZipDirectory)) {
-      fs.mkdirSync(buildZipDirectory);
+    if (shouldBuildZip) {
+      if (!fs.existsSync(buildZipDirectory)) {
+        fs.mkdirSync(buildZipDirectory);
+      }
+
+      console.log(`${chalk.cyan('[λ]')} Creating zip`);
+      return zipDirectory(
+        buildDirectory,
+        `${buildZipDirectory}/image-compress-lambda.zip`
+      );
     }
-    console.log(`${chalk.cyan('[λ]')} Creating zip`);
-    return zipDirectory(
-      buildDirectory,
-      `${buildZipDirectory}/image-compress-lambda.zip`
-    );
   })
   .then(() =>
     console.log(`${chalk.cyan('[λ]')} ${chalk.green('Build successful')}`)

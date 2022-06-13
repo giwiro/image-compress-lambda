@@ -37,15 +37,15 @@ export function parseUrlPath(path: string): {
     throw new Error('Wrong url path format: ' + path);
   }
 
-  const normalizedPath = match[2].startsWith('/')
-    ? match[2].slice(1)
-    : match[2];
+  const normalizedPath = match[1].startsWith('/')
+    ? match[1].slice(1)
+    : match[1];
 
   return {
     path: normalizedPath,
     dimensions: match[2],
     fileName: match[3],
-    originalObjectKey: `${path}${match[4]}`,
+    originalObjectKey: `${normalizedPath}${match[3]}`,
   };
 }
 
