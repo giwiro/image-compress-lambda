@@ -29,11 +29,10 @@ export function parseUrlPath(urlPath: string): {
   fileName: string;
   originalObjectKey: string;
 } {
-  const reg =
-    /^(https?:\/\/[\w\-.]+?)(\/.*?)(\d+x\d+)\/([a-zA-Z\d_\-.~?=&\[\]]+?)$/;
+  const reg = /^(\/.*?)(\d+x\d+)\/([a-zA-Z\d_\-.~?=&\[\]]+?)$/;
   const match = urlPath.match(reg);
 
-  if (!match || match[0] !== urlPath || match.length !== 5) {
+  if (!match || match[0] !== urlPath || match.length !== 4) {
     throw new Error('Wrong url path format: ' + urlPath);
   }
 
@@ -41,8 +40,8 @@ export function parseUrlPath(urlPath: string): {
 
   return {
     path,
-    dimensions: match[3],
-    fileName: match[4],
+    dimensions: match[2],
+    fileName: match[3],
     originalObjectKey: `${path}${match[4]}`,
   };
 }
