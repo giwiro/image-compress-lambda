@@ -130,7 +130,7 @@ Resources:
               }
               return callback(null, response);
             };
-        Description: AWS Lambda@Edge ${EnvironmentName} function to delete
+        Description: !Sub AWS Lambda@Edge ${EnvironmentName} function to delete
         FunctionName: !Sub disable-cache-cloudfront-lambda-${EnvironmentName}
         Handler: index.handler
         MemorySize: 128
@@ -138,6 +138,11 @@ Resources:
         Role: !GetAtt ClearCacheLambdaEdgeRole.Arn
         Runtime: nodejs16.x
         Timeout: 5
+  ClearCacheLambdaEdgeVersion:
+    Type: AWS::Lambda::Version
+    Properties:
+      FunctionName: !Ref ClearCacheLambdaEdgeFunction
+      Description: v1
   LambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -181,7 +186,7 @@ Resources:
       Code:
         S3Bucket: !Sub ${CodeS3Bucket}
         S3Key: lambda/image-compress-lambda.zip
-      Description: AWS Lambda ${EnvironmentName} function to compress and shrink images.
+      Description: !Sub AWS Lambda ${EnvironmentName} function to compress and shrink images.
       FunctionName: !Sub image-compress-lambda-${EnvironmentName}
       Handler: index.handler
       MemorySize: !Sub ${MemorySize}
@@ -242,7 +247,7 @@ Resources:
   ApiGatewayLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub qempo-image-compress-gateway-api-access-logs-${EnvironmentName}
+      LogGroupName: !Sub image-compress-gateway-api-access-logs-${EnvironmentName}
       RetentionInDays: 30
 Outputs:
   Endpoint:
