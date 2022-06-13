@@ -22,24 +22,27 @@ export function extractDimensions(dimensions = ''): [number, number] {
 //
 // The original file url is this: https://uploads.domain.io/public/331C474F-61FC-4E2B-9242-4AA7C29B389D.png
 // so we put a "<width>x<height>" format string before the filename:
-// https://uploads.domain.io/public/80x80/331C474F-61FC-4E2B-9242-4AA7C29B389D.png;
-export function parseUrlPath(urlPath: string): {
+// https://uploads.domain.io/public/80x80/331C474F-61FC-4E2B-9242-4AA7C29B389D.png
+// so the path parameter would be just "/public/80x80/331C474F-61FC-4E2B-9242-4AA7C29B389D.png"
+export function parseUrlPath(path: string): {
   path: string;
   dimensions: string;
   fileName: string;
   originalObjectKey: string;
 } {
   const reg = /^(\/.*?)(\d+x\d+)\/([a-zA-Z\d_\-.~?=&\[\]]+?)$/;
-  const match = urlPath.match(reg);
+  const match = path.match(reg);
 
-  if (!match || match[0] !== urlPath || match.length !== 4) {
-    throw new Error('Wrong url path format: ' + urlPath);
+  if (!match || match[0] !== path || match.length !== 4) {
+    throw new Error('Wrong url path format: ' + path);
   }
 
-  const path = match[2].startsWith('/') ? match[2].slice(1) : match[2];
+  const normalizedPath = match[2].startsWith('/')
+    ? match[2].slice(1)
+    : match[2];
 
   return {
-    path,
+    path: normalizedPath,
     dimensions: match[2],
     fileName: match[3],
     originalObjectKey: `${path}${match[4]}`,
