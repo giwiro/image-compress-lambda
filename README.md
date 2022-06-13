@@ -10,6 +10,34 @@ data repository.
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 [![License: GNU](https://img.shields.io/badge/License-GNU-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.en.html)
 
+## Deployment
+
+1. Clone the repository.
+
+```
+$ git clone https://github.com/giwiro/image-compress-lambda.git
+```
+
+2. Install all dependencies.
+
+```
+$ npm install
+```
+
+3. Build the lambda code intro a zip file. This will generate a `build-zip` folder with a zip file in it.
+
+```
+$ npm run build
+```
+
+4. Upload the generated zip file along the cloudformation config file into an S3 bucket. This bucket will
+   just host these 2 files, do not get confused with the bucket hosting the images. Do not forget to pass 
+   the environment variables: `S3_BUCKET` and `S3_REGION`.
+
+```
+$ S3_BUCKET=image-compress-lambda S3_REGION=us-east-1 npm run sync
+```
+
 ## Stack
 
 For the code itself we use `typescript` with `eslint` and `prettier` for code formatting. Additionally, we use

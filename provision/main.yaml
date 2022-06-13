@@ -12,7 +12,6 @@ Parameters:
   CodeS3Bucket:
     Type: String
     Description: The bucket name where the lambda code is hosted
-
   TargetS3Bucket:
     Type: String
     Description: Bucket name where the lambda is going to save the thumbnails
@@ -59,11 +58,8 @@ Parameters:
     Default: 256
   CreateClearCacheLambdaEdge:
     Type: String
-    AllowedValues: [
-      true,
-      false
-    ]
-    Default: true,
+    AllowedValues: [true, false]
+    Default: true
     Description: Whether we should include the clear cache lambda@edge function or not.
 Conditions:
   IncludeClearCacheFunction:  !Equals [!Ref CreateClearCacheLambdaEdge, true]
