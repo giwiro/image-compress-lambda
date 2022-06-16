@@ -92,7 +92,25 @@ to be this exact keyword. It can be any prefix you like, but you will need it la
 ### NOTE 2
 
 Do not forget to configure the S3 redirect rules when the object is absent (404). This rule will depend on the ApiGatewayStage
-and the prefix of the request url to the s3 bucket hosting the images (`public`).
+and the prefix of the request url to the s3 bucket hosting the images.
+
+```json
+[
+  {
+    "Condition": {
+      "HttpErrorCodeReturnedEquals": "404",
+      "KeyPrefixEquals": "<prefix>"
+    },
+    "Redirect": {
+      "HostName": "<api_gateway_id>.execute-api.<region>.amazonaws.com",
+      "HttpRedirectCode": "307",
+      "Protocol": "https",
+      "ReplaceKeyPrefixWith": "<stage>/<prefix>"
+    }
+  }
+]
+```
+
 If the stage is "local" and the prefix is "public", then the rule would look like something like this:
 
 ```json

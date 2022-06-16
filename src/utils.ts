@@ -23,18 +23,27 @@ export function extractDimensions(dimensions = ''): [number, number] {
 // The original file url is this: https://uploads.domain.io/public/331C474F-61FC-4E2B-9242-4AA7C29B389D.png
 // so we put a "<width>x<height>" format string before the filename:
 // https://uploads.domain.io/public/80x80/331C474F-61FC-4E2B-9242-4AA7C29B389D.png
-// so the path parameter would be just "/public/80x80/331C474F-61FC-4E2B-9242-4AA7C29B389D.png"
-export function parseUrlPath(path: string): {
+// so the path parameter would be just "/local/public/80x80/331C474F-61FC-4E2B-9242-4AA7C29B389D.png"
+// why 'local' prefix? because in the S3 404 redirect config to APIGateway, it will replace 'public'
+// to 'local/public', so we need to remove it in order to look for the original s3 object
+export function parseUrlPath(
+  path: string,
+  stage: string
+): {
   path: string;
   dimensions: string;
   fileName: string;
   originalObjectKey: string;
 } {
-  const reg = /^(\/.*?)(\d+x\d+)\/([a-zA-Z\d_\-.~?=&\[\]]+?)$/;
-  const match = path.match(reg);
+  const pathNoStage = path.replace(`/${stage}`, '');
 
-  if (!match || match[0] !== path || match.length !== 4) {
-    throw new Error('Wrong url path format: ' + path);
+  const reg = /^(\/.*?)(\d+x\d+)\/([a-zA-Z\d_\-.~?=&\[\]]+?)$/;
+  const match = pathNoStage.match(reg);
+
+  if (!match || match[0] !== pathNoStage || match.length !== 4) {
+    throw new Error(
+      `Wrong url path format: ${path}\n\npath without stage: ${pathNoStage}`
+    );
   }
 
   const normalizedPath = match[1].startsWith('/')
@@ -42,7 +51,7 @@ export function parseUrlPath(path: string): {
     : match[1];
 
   return {
-    path: normalizedPath,
+    path: pathNoStage,
     dimensions: match[2],
     fileName: match[3],
     originalObjectKey: `${normalizedPath}${match[3]}`,

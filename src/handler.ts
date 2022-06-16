@@ -32,9 +32,7 @@ const handler: APIGatewayProxyHandlerV2 = async (
     region: vars.region,
   });
 
-  const urlPath = event.requestContext
-    ? event.requestContext.http.path
-    : undefined;
+  const urlPath = event.requestContext.http.path;
 
   if (!urlPath) {
     return callback(undefined, {
@@ -52,8 +50,10 @@ const handler: APIGatewayProxyHandlerV2 = async (
   let originObjectTags: GetObjectTaggingOutput;
 
   try {
-    const {path, dimensions, fileName, originalObjectKey} =
-      parseUrlPath(urlPath);
+    const {path, dimensions, fileName, originalObjectKey} = parseUrlPath(
+      urlPath,
+      event.requestContext.stage
+    );
 
     originalKey = originalObjectKey;
     [width, height] = extractDimensions(dimensions);
