@@ -16,7 +16,7 @@ Parameters:
     Type: String
     Description: |
       Bucket name where the lambda is going to save the thumbnails.
-      Example: uploads.domain.com.
+      Example: uploads.domain.com
   TargetS3BucketRegion:
     Type: String
     Description: Bucket region.
