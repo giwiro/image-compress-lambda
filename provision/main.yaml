@@ -9,9 +9,9 @@ Parameters:
     Description: An environment name that will be prefixed to resource names
     AllowedValues: [ local, development, staging, production ]
     Default: local
-  CodeS3Bucket:
+  LambdaCodeZipBucket:
     Type: String
-    Description: The bucket name where the lambda code is hosted
+    Description: The bucket name where the lambda code is hosted.
   TargetS3Bucket:
     Type: String
     Description: |
@@ -185,7 +185,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        S3Bucket: !Sub ${CodeS3Bucket}
+        S3Bucket: !Sub ${LambdaCodeZipBucket}
         S3Key: lambda/image-compress-lambda.zip
       Description: !Sub AWS Lambda ${EnvironmentName} function to compress and shrink images.
       FunctionName: !Sub image-compress-lambda-${EnvironmentName}

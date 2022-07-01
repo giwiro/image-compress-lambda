@@ -38,7 +38,13 @@ $ npm run build
 ```
 $ S3_BUCKET=image-compress-lambda S3_REGION=us-east-1 npm run sync
 ```
+   This will create a folder structure like this in your bucket.
 
+    /image-compress-lambda
+      ├── /lambda
+      │     └── image-compress-lambda.zip       # Lambda code zipped.
+      └── /provision
+            └── main.yaml                       # Cloudformation template for all resource creation.
 5. Deploy the uploaded `provision/main.yaml` into cloudformation and provide all required info. This will
    create the `image-compress-lambda` function and optionally (recommended) the `disable-cache-cloudfront-lambda`
    function.
