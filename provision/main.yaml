@@ -14,12 +14,12 @@ Parameters:
     Description: The bucket name where the lambda code is hosted
   TargetS3Bucket:
     Type: String
-    Description: Bucket name where the lambda is going to save the thumbnails
+    Description: |
+      Bucket name where the lambda is going to save the thumbnails.
+      Example: uploads.domain.com.
   TargetS3BucketRegion:
     Type: String
-    Description: |
-      Bucket region where the lambda ig going to save the thumbnails.
-      Example: uploads.domain.com
+    Description: Bucket region.
     AllowedValues: [
       us-east-1,
       us-east-2,
@@ -49,6 +49,7 @@ Parameters:
     Type: String
     Description: |
       Root url of the S3 website that lambda will redirect to, after the file compression.
+      IMPORTANT!! It must have trailing slash!
       Example: https://uploads.domain.com/
   MemorySize:
     Type: Number

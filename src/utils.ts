@@ -34,6 +34,7 @@ export function parseUrlPath(
   dimensions: string;
   fileName: string;
   originalObjectKey: string;
+  newObjectKey: string;
 } {
   const pathNoStage = path.replace(`/${stage}`, '');
 
@@ -50,11 +51,23 @@ export function parseUrlPath(
     ? match[1].slice(1)
     : match[1];
 
+  console.log(
+    'return',
+    JSON.stringify({
+      path: normalizedPath,
+      dimensions: match[2],
+      fileName: match[3],
+      originalObjectKey: `${normalizedPath}${match[3]}`,
+      newObjectKey: `${normalizedPath}${match[2]}/${match[3]}`,
+    })
+  );
+
   return {
-    path: pathNoStage,
+    path: normalizedPath,
     dimensions: match[2],
     fileName: match[3],
     originalObjectKey: `${normalizedPath}${match[3]}`,
+    newObjectKey: `${normalizedPath}${match[2]}/${match[3]}`,
   };
 }
 

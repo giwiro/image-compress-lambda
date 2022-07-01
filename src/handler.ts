@@ -44,20 +44,21 @@ const handler: APIGatewayProxyHandlerV2 = async (
   let width: number;
   let height: number;
   let originalKey: string;
-  let newKey: string;
+  let newObjectKey: string;
 
   let originalObject: GetObjectOutput;
   let originObjectTags: GetObjectTaggingOutput;
 
   try {
-    const {path, dimensions, fileName, originalObjectKey} = parseUrlPath(
-      urlPath,
-      event.requestContext.stage
-    );
+    const {
+      dimensions,
+      originalObjectKey,
+      newObjectKey: nok,
+    } = parseUrlPath(urlPath, event.requestContext.stage);
 
     originalKey = originalObjectKey;
     [width, height] = extractDimensions(dimensions);
-    newKey = `${path}${dimensions}/${fileName}`;
+    newObjectKey = nok;
   } catch (e) {
     const error = e as Error;
     return callback(undefined, {
@@ -140,7 +141,7 @@ const handler: APIGatewayProxyHandlerV2 = async (
     await s3.send(
       new PutObjectCommand({
         Bucket: vars.bucket,
-        Key: newKey,
+        Key: newObjectKey,
         Body: buffer,
         CacheControl: 'public, max-age=31536000',
         ContentType: originalObject.ContentType as string,
@@ -159,7 +160,7 @@ const handler: APIGatewayProxyHandlerV2 = async (
   return callback(null, {
     statusCode: 301,
     headers: {
-      location: `${vars.rootUrl}/${newKey}`,
+      location: `${vars.rootUrl}${newObjectKey}`,
     },
     body: '',
   });
